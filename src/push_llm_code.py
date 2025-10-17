@@ -3,6 +3,7 @@ import os
 import json
 import subprocess
 import logging
+import requests
 from pathlib import Path
 from typing import Dict, Optional
 from pydantic import BaseModel, Field
@@ -321,29 +322,77 @@ def push_code_to_repo(
         str: Commit SHA
     """
     from src.create_repo import setup_git_config, clone_existing_repo
+    import os
     
     # Clone or get repo directory
     if is_update:
         repo_dir = clone_existing_repo(repo_url, f"{task_id}-update")
     else:
-        repo_dir = Path(f"/tmp/repo-{task_id}")
-        repo_dir.mkdir(parents=True, exist_ok=True)
+        # For Round 1, check if repo already exists on GitHub (e.g., from previous failed run)
+        # If it exists, clone it; otherwise, initialize a new repo
+        github_token = os.getenv("GITHUB_TOKEN")
         
-        # Initialize repo
-        subprocess.run(
-            ["git", "init"],
-            cwd=str(repo_dir),
-            check=True,
-            capture_output=True,
-        )
-        
-        # Add remote
-        subprocess.run(
-            ["git", "remote", "add", "origin", repo_url],
-            cwd=str(repo_dir),
-            check=True,
-            capture_output=True,
-        )
+        # Extract owner and repo name from URL
+        if "github.com/" in repo_url:
+            parts = repo_url.split("github.com/")[-1].split("/")
+            owner = parts[0]
+            repo_name = parts[1].replace(".git", "")
+            
+            # Check if repo exists on GitHub
+            headers = {
+                "Authorization": f"token {github_token}",
+                "Accept": "application/vnd.github.v3+json",
+            }
+            check_response = requests.get(
+                f"https://api.github.com/repos/{owner}/{repo_name}",
+                headers=headers,
+                timeout=10,
+            )
+            
+            if check_response.status_code == 200:
+                # Repo exists, clone it
+                logger.info(f"Repository {repo_name} exists, cloning...")
+                repo_dir = clone_existing_repo(repo_url, task_id)
+            else:
+                # Repo doesn't exist, initialize new
+                repo_dir = Path(f"/tmp/repo-{task_id}")
+                repo_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Initialize repo
+                subprocess.run(
+                    ["git", "init"],
+                    cwd=str(repo_dir),
+                    check=True,
+                    capture_output=True,
+                )
+                
+                # Add remote
+                subprocess.run(
+                    ["git", "remote", "add", "origin", repo_url],
+                    cwd=str(repo_dir),
+                    check=True,
+                    capture_output=True,
+                )
+        else:
+            # If not a GitHub URL, just initialize
+            repo_dir = Path(f"/tmp/repo-{task_id}")
+            repo_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Initialize repo
+            subprocess.run(
+                ["git", "init"],
+                cwd=str(repo_dir),
+                check=True,
+                capture_output=True,
+            )
+            
+            # Add remote
+            subprocess.run(
+                ["git", "remote", "add", "origin", repo_url],
+                cwd=str(repo_dir),
+                check=True,
+                capture_output=True,
+            )
     
     # Setup git config
     setup_git_config(repo_dir, "builder@llm-app.local")

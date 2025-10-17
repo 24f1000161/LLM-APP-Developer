@@ -47,6 +47,33 @@ def create_github_repo(repo_name: str, email: str) -> tuple:
         timeout=10,
     )
     
+    # If repo already exists, fetch its details instead
+    if response.status_code == 422:
+        response_data = response.json()
+        if "errors" in response_data and any(
+            err.get("message") == "name already exists on this account"
+            for err in response_data["errors"]
+        ):
+            logger.warning(f"Repository {repo_name} already exists, fetching details...")
+            
+            # Get existing repo details
+            get_response = requests.get(
+                f"https://api.github.com/repos/{github_user}/{repo_name}",
+                headers=headers,
+                timeout=10,
+            )
+            
+            if get_response.status_code == 200:
+                repo_data = get_response.json()
+                repo_url = repo_data["html_url"]
+                clone_url = repo_data["clone_url"]
+                logger.info(f"Using existing repository: {repo_url}")
+                return repo_url, clone_url
+            else:
+                raise Exception(f"Repo exists but could not fetch details: {get_response.status_code}")
+        else:
+            raise Exception(f"Failed to create repo: {response.status_code} - {response.text}")
+    
     if response.status_code not in [200, 201]:
         raise Exception(f"Failed to create repo: {response.status_code} - {response.text}")
     
