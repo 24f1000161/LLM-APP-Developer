@@ -8,7 +8,7 @@ def validate_secret(provided_secret: str) -> bool:
     """
     Validate that the provided secret matches the expected secret.
     
-    The expected secret is stored in the SECRET_KEY environment variable.
+    The expected secret is stored in the STUDENT_SECRET environment variable.
     This should be configured in a .env file or as an environment variable.
     
     Args:
@@ -17,10 +17,10 @@ def validate_secret(provided_secret: str) -> bool:
     Returns:
         bool: True if the secret is valid, False otherwise
     """
-    expected_secret = os.getenv("SECRET_KEY", "")
+    expected_secret = os.getenv("STUDENT_SECRET", "")
     
     if not expected_secret:
-        logger.warning("SECRET_KEY environment variable is not set")
+        logger.warning("STUDENT_SECRET environment variable is not set")
         return False
     
     # Use constant-time comparison to prevent timing attacks

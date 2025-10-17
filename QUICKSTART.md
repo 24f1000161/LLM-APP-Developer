@@ -48,7 +48,7 @@ Create a `.env` file in the project root:
 
 ```env
 # Get this from the evaluation server
-SECRET_KEY=your-secret-from-form
+STUDENT_SECRET=your-secret-from-form
 
 # GitHub configuration
 GITHUB_TOKEN=ghp_your_token_from_github
@@ -132,7 +132,7 @@ Check that:
 
 ### "Invalid secret"
 Make sure:
-- The `SECRET_KEY` in `.env` matches what you submitted in the form
+- The `STUDENT_SECRET` in `.env` matches what you submitted in the form
 - Case is exactly the same
 
 ### "Failed to create repository"
@@ -163,7 +163,7 @@ Then start the server: `python main.py`
 
 heroku login
 heroku create your-app-name
-heroku config:set SECRET_KEY=... GITHUB_TOKEN=... etc.
+heroku config:set STUDENT_SECRET=... GITHUB_TOKEN=... etc.
 git push heroku main
 ```
 

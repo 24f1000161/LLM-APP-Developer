@@ -18,7 +18,7 @@ class Config:
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
     # Secrets and Authentication
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "")
+    STUDENT_SECRET: str = os.getenv("STUDENT_SECRET", "")
     GITHUB_TOKEN: str = os.getenv("GITHUB_TOKEN", "")
     GITHUB_USER: str = os.getenv("GITHUB_USER", "")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
@@ -30,7 +30,7 @@ class Config:
     
     # LLM Configuration
     LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-5-nano")
-    LLM_FALLBACK_MODEL: str = os.getenv("LLM_FALLBACK_MODEL", "gemini-2.0-flash")
+    LLM_FALLBACK_MODEL: str = os.getenv("LLM_FALLBACK_MODEL", "gemini-2.5-flash")
     LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", 4096))
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", 0.7))
     
@@ -58,7 +58,7 @@ class Config:
         errors = []
         
         required = {
-            "SECRET_KEY": "Student secret for verification",
+            "STUDENT_SECRET": "Student secret for verification",
             "GITHUB_TOKEN": "GitHub personal access token",
             "GITHUB_USER": "GitHub username",
             "OPENAI_API_KEY": "OpenAI API key for GPT-5-nano (primary)",
