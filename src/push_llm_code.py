@@ -65,10 +65,10 @@ def _generate_with_openai(
     if not api_key:
         raise ValueError("OPENAI_API_KEY not configured")
     
-    # Initialize the model
+    # pydantic-ai uses OPENAI_API_KEY from environment
+    # Initialize the model without api_key parameter
     model = OpenAIModel(
-        model_name="gpt-5-nano",
-        api_key=api_key
+        model_name="gpt-5-nano"
     )
     
     # Create an agent for code generation
@@ -103,10 +103,10 @@ def _generate_with_gemini(
     if not api_key:
         raise ValueError("GEMINI_API_KEY not configured")
     
-    # Initialize the model
+    # pydantic-ai uses GEMINI_API_KEY from environment
+    # Initialize the model without api_key parameter
     model = GeminiModel(
-        model_name="gemini-2.0-flash",
-        api_key=api_key
+        model_name="gemini-2.5-flash"
     )
     
     # Create an agent for code generation
