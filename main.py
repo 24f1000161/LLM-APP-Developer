@@ -66,7 +66,7 @@ async def lifespan(app: FastAPI):
     
     # Verify required secrets
     required_secrets = ["GITHUB_TOKEN", "STUDENT_SECRET"]
-    optional_secrets = ["OPENAI_API_KEY", "GOOGLE_API_KEY"]
+    optional_secrets = ["OPENAI_API_KEY", "GEMINI_API_KEY"]
     
     for secret in required_secrets:
         if not os.getenv(secret):
@@ -157,7 +157,7 @@ async def health():
         "secrets_configured": {
             "github_token": bool(os.getenv("GITHUB_TOKEN")),
             "openai_key": bool(os.getenv("OPENAI_API_KEY")),
-            "google_key": bool(os.getenv("GOOGLE_API_KEY")),
+            "gemini_key": bool(os.getenv("GEMINI_API_KEY")),
             "student_secret": bool(os.getenv("STUDENT_SECRET")),
         }
     }

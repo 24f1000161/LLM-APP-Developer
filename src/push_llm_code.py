@@ -99,11 +99,11 @@ async def _generate_with_gemini(
     """Generate code using Google Gemini as fallback."""
     from pydantic_ai.models.gemini import GeminiModel
     
-    api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
-        raise ValueError("GOOGLE_API_KEY not configured")
+        raise ValueError("GEMINI_API_KEY not configured")
     
-    # pydantic-ai uses GOOGLE_API_KEY from environment
+    # pydantic-ai uses GEMINI_API_KEY from environment
     # Initialize the model without api_key parameter
     model = GeminiModel(
         model_name="gemini-2.5-flash"
