@@ -110,6 +110,7 @@ async def round1(request_data: dict) -> dict:
         # Return success even if notification failed - the important work is done
         return {
             "status": "success",
+            "message": "Repository created and deployed successfully",
             "repo_url": repo_url,
             "pages_url": pages_url,
             "commit_sha": commit_sha,
