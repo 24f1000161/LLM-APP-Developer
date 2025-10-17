@@ -1,0 +1,27 @@
+# LLM App Developer - Python Dependencies
+
+# FastAPI and web server
+fastapi[standard]>=0.119.0
+uvicorn[standard]>=0.37.0
+
+# Configuration management
+python-dotenv>=1.1.1
+
+# HTTP requests
+requests>=2.32.5
+
+# Pydantic AI for agent-based code generation
+pydantic-ai>=0.0.1
+
+# LLM APIs - Primary and Fallback
+openai>=1.0.0
+google-generativeai>=0.3.0
+
+# Data validation
+pydantic>=2.0.0
+
+# Development and testing (optional)
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+httpx>=0.24.0
+
