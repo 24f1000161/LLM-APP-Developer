@@ -14,11 +14,14 @@ def create_github_repo(repo_name: str, email: str) -> tuple:
     Create a new GitHub repository using the GitHub API.
     
     Args:
-        repo_name: Name for the new repository (will be sanitized and hashed)
+        repo_name: Name for the new repository (already derived/sanitized)
         email: Student email (for reference/documentation)
     
     Returns:
         tuple: (repo_url, clone_url)
+    
+    Note: repo_name should already be derived using derive_repo_name_from_task()
+          before calling this function. Do NOT derive it again here.
     """
     github_token = os.getenv("GITHUB_TOKEN")
     github_user = os.getenv("GITHUB_USER")
@@ -26,8 +29,7 @@ def create_github_repo(repo_name: str, email: str) -> tuple:
     if not github_token or not github_user:
         raise ValueError("GITHUB_TOKEN and GITHUB_USER environment variables are required")
     
-    # Use centralized repo name derivation (ensures Round 2 can find this repo)
-    repo_name = derive_repo_name_from_task(repo_name)
+    # repo_name is already derived by caller - use it directly
     
     headers = {
         "Authorization": f"token {github_token}",
