@@ -82,17 +82,33 @@ async def round2(request_data: dict) -> dict:
             "pages_url": pages_url,
         }
         
-        response = requests.post(
-            evaluation_url,
-            json=notification,
-            headers={"Content-Type": "application/json"},
-            timeout=10,
-        )
+        # Try to notify evaluation API with retries
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(
+                    evaluation_url,
+                    json=notification,
+                    headers={"Content-Type": "application/json"},
+                    timeout=30,  # Increased from 10 to 30 seconds
+                )
+                
+                if response.status_code != 200:
+                    logger.warning(f"Evaluation API returned {response.status_code}")
+                else:
+                    logger.info(f"Successfully notified evaluation API")
+                    break
+            except requests.exceptions.Timeout:
+                logger.warning(f"Evaluation API timeout (attempt {attempt + 1}/{max_retries})")
+                if attempt == max_retries - 1:
+                    logger.error("Failed to notify evaluation API after all retries")
+                    # Don't fail the entire request just because notification failed
+                    # The repo and pages were created successfully
+            except Exception as e:
+                logger.error(f"Error notifying evaluation API: {str(e)}")
+                break
         
-        if response.status_code != 200:
-            logger.warning(f"Evaluation API returned {response.status_code}")
-            return {"status": "error", "message": "Evaluation API notification failed"}
-        
+        # Return success even if notification failed - the important work is done
         return {
             "status": "success",
             "repo_url": repo_url,
