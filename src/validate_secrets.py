@@ -1,6 +1,35 @@
-import os 
+import os
+import logging
 
-def validate_secret(payload):
-    secret = os.getenv("SECRET_KEY")
-    return secret == "my_secret_code"
+logger = logging.getLogger(__name__)
+
+
+def validate_secret(provided_secret: str) -> bool:
+    """
+    Validate that the provided secret matches the expected secret.
+    
+    The expected secret is stored in the SECRET_KEY environment variable.
+    This should be configured in a .env file or as an environment variable.
+    
+    Args:
+        provided_secret: The secret provided in the request
+    
+    Returns:
+        bool: True if the secret is valid, False otherwise
+    """
+    expected_secret = os.getenv("SECRET_KEY", "")
+    
+    if not expected_secret:
+        logger.warning("SECRET_KEY environment variable is not set")
+        return False
+    
+    # Use constant-time comparison to prevent timing attacks
+    from hmac import compare_digest
+    
+    is_valid = compare_digest(provided_secret, expected_secret)
+    
+    if not is_valid:
+        logger.warning("Invalid secret provided in request")
+    
+    return is_valid
 
