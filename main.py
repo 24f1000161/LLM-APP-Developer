@@ -65,12 +65,14 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     
     # Verify required secrets
-    required_secrets = ["GITHUB_TOKEN", "STUDENT_SECRET"]
+    required_secrets = ["GITHUB_TOKEN", "GITHUB_USER", "STUDENT_SECRET"]
     optional_secrets = ["OPENAI_API_KEY", "GEMINI_API_KEY"]
     
     for secret in required_secrets:
         if not os.getenv(secret):
             logger.warning(f"⚠️  Missing required environment variable: {secret}")
+        else:
+            logger.info(f"✓ {secret} is configured")
     
     for secret in optional_secrets:
         if os.getenv(secret):
