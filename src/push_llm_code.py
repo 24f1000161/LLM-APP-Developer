@@ -153,71 +153,160 @@ def _get_system_prompt(is_revision: bool = False) -> str:
         return """You are an expert web developer specializing in revising and improving web applications.
 Your task is to take existing application requirements and generate updated HTML, CSS, and JavaScript code.
 
-IMPORTANT REQUIREMENTS:
-1. Always generate code in the exact XML format specified
-2. Keep existing functionality and enhance it
-3. Ensure code is minimal, clean, and well-commented
-4. Use Bootstrap 5 from CDN for professional styling
-5. Include proper error handling and user feedback
-6. Write a comprehensive README.md file
-7. Include a complete MIT LICENSE
+CRITICAL OUTPUT REQUIREMENTS:
+1. Generate EXACTLY 5 files: index.html, style.css, script.js, README.md, LICENSE
+2. Each file MUST be wrapped in <FILE name="filename"></FILE> tags
+3. ALWAYS close every <FILE> tag properly with </FILE>
+4. Put each file's content between the opening and closing tags
+5. Do NOT include any text outside the FILE tags
+6. Update the README.md to reflect ALL changes made in this revision
+7. Keep the existing MIT LICENSE unchanged
 
-OUTPUT FORMAT:
-Return your response EXACTLY in this format with no additional text:
+CODE REQUIREMENTS:
+- Maintain existing functionality and enhance it
+- Use Bootstrap 5 from CDN for professional styling
+- Include proper error handling and user feedback
+- Write clean, well-commented code
 
+README REQUIREMENTS FOR REVISIONS:
+- Document all new features and changes
+- Update the usage section with new functionality
+- Keep professional structure: Overview, Features, Setup, Usage, License
+
+OUTPUT FORMAT (FOLLOW EXACTLY):
 <FILE name="index.html">
-[HTML content here]
+[Complete HTML content]
 </FILE>
 
 <FILE name="style.css">
-[CSS content here]
+[Complete CSS content]
 </FILE>
 
 <FILE name="script.js">
-[JavaScript content here]
+[Complete JavaScript content]
 </FILE>
 
 <FILE name="README.md">
-[Markdown content here]
+# [App Title]
+
+## Overview
+[Brief description and what's new in this revision]
+
+## Features
+- [List all features including new ones]
+
+## Setup
+[Installation/deployment instructions]
+
+## Usage
+[How to use the app]
+
+## License
+MIT License - see LICENSE file for details.
 </FILE>
 
 <FILE name="LICENSE">
-[MIT License text]
+MIT License
+
+Copyright (c) 2025 LLM App Developer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 </FILE>"""
     else:
         return """You are an expert full-stack web developer specializing in building single-page applications.
 Your task is to generate complete, production-ready HTML, CSS, and JavaScript code based on requirements.
 
-IMPORTANT REQUIREMENTS:
-1. Always generate code in the exact XML format specified
-2. Create minimal but fully functional applications
-3. Use professional design with Bootstrap 5 from CDN
-4. Include comprehensive error handling
-5. Write clean, well-commented code
-6. Generate a professional README.md file
-7. Include a complete MIT LICENSE
+CRITICAL OUTPUT REQUIREMENTS:
+1. Generate EXACTLY 5 files: index.html, style.css, script.js, README.md, LICENSE
+2. Each file MUST be wrapped in <FILE name="filename"></FILE> tags
+3. ALWAYS close every <FILE> tag properly with </FILE>
+4. Put each file's content between the opening and closing tags
+5. Do NOT include any text outside the FILE tags
 
-OUTPUT FORMAT:
-Return your response EXACTLY in this format with no additional text:
+CODE REQUIREMENTS:
+- Create minimal but fully functional applications
+- Use professional design with Bootstrap 5 from CDN
+- Include comprehensive error handling
+- Write clean, well-commented code
 
+README REQUIREMENTS:
+- Professional and comprehensive
+- Document all features clearly
+- Include setup and usage instructions
+- Follow the exact structure provided below
+
+OUTPUT FORMAT (FOLLOW EXACTLY):
 <FILE name="index.html">
-[HTML content here]
+[Complete HTML content]
 </FILE>
 
 <FILE name="style.css">
-[CSS content here]
+[Complete CSS content]
 </FILE>
 
 <FILE name="script.js">
-[JavaScript content here]
+[Complete JavaScript content]
 </FILE>
 
 <FILE name="README.md">
-[Markdown content with: Overview, Setup, Usage, Features, License]
+# [App Title]
+
+## Overview
+[Brief description of what the app does]
+
+## Features
+- [Feature 1]
+- [Feature 2]
+- [Feature 3]
+
+## Setup
+[Installation/deployment instructions]
+
+## Usage
+[Step-by-step usage instructions]
+
+## License
+MIT License - see LICENSE file for details.
 </FILE>
 
 <FILE name="LICENSE">
-[MIT License text]
+MIT License
+
+Copyright (c) 2025 LLM App Developer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 </FILE>"""
 
 
@@ -267,36 +356,124 @@ Return ONLY the XML formatted response as specified."""
 def _parse_llm_response(response_text: str) -> Dict[str, str]:
     """Extract files from LLM response."""
     files = {}
-    
-    # Parse <FILE name="..."> blocks
     import re
-    pattern = r'<FILE name="([^"]+)">\n(.*?)\n</FILE>'
-    matches = re.findall(pattern, response_text, re.DOTALL)
+    
+    # More flexible pattern that handles various edge cases
+    # Try multiple parsing strategies
+    
+    # Strategy 1: Standard XML-style tags with closing tags
+    pattern = r'<FILE name="([^"]+)"[^>]*>(.*?)</FILE>'
+    matches = re.findall(pattern, response_text, re.DOTALL | re.IGNORECASE)
     
     for filename, content in matches:
-        files[filename] = content.strip()
+        # Clean up content - remove leading/trailing whitespace and newlines
+        cleaned = content.strip()
+        if cleaned:
+            files[filename] = cleaned
+            logger.info(f"Parsed file: {filename} ({len(cleaned)} chars)")
     
-    # If no files found using the above pattern, try a simpler extraction
+    # Strategy 2: If no files found, try parsing without closing tags
+    # (LLM might not properly close tags)
     if not files:
+        logger.warning("Standard parsing failed, trying alternative parsing...")
         lines = response_text.split('\n')
         current_file = None
         current_content = []
         
-        for line in lines:
-            if line.startswith('<FILE name="'):
-                if current_file:
-                    files[current_file] = '\n'.join(current_content).strip()
+        for i, line in enumerate(lines):
+            # Check for opening tag
+            if '<FILE name="' in line or '<file name="' in line:
+                # Save previous file if exists
+                if current_file and current_content:
+                    content = '\n'.join(current_content).strip()
+                    if content:
+                        files[current_file] = content
+                        logger.info(f"Parsed file (alt): {current_file} ({len(content)} chars)")
                     current_content = []
-                match = re.search(r'<FILE name="([^"]+)">', line)
+                
+                # Extract filename
+                match = re.search(r'<FILE name="([^"]+)"[^>]*>', line, re.IGNORECASE)
                 if match:
                     current_file = match.group(1)
-            elif line.startswith('</FILE>'):
-                if current_file:
-                    files[current_file] = '\n'.join(current_content).strip()
-                    current_file = None
-                    current_content = []
+                    # If there's content after the tag on the same line, include it
+                    rest_of_line = line[match.end():].strip()
+                    if rest_of_line and not rest_of_line.startswith('<'):
+                        current_content.append(rest_of_line)
+            # Check for closing tag
+            elif '</FILE>' in line or '</file>' in line:
+                if current_file and current_content:
+                    content = '\n'.join(current_content).strip()
+                    if content:
+                        files[current_file] = content
+                        logger.info(f"Parsed file (closed): {current_file} ({len(content)} chars)")
+                current_file = None
+                current_content = []
+            # Regular content line
             elif current_file:
                 current_content.append(line)
+        
+        # Don't forget the last file if parsing ended without </FILE>
+        if current_file and current_content:
+            content = '\n'.join(current_content).strip()
+            if content:
+                files[current_file] = content
+                logger.info(f"Parsed file (last): {current_file} ({len(content)} chars)")
+    
+    # Ensure LICENSE file exists
+    if "LICENSE" not in files:
+        files["LICENSE"] = """MIT License
+
+Copyright (c) 2025 LLM App Developer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE."""
+        logger.info("Added MIT LICENSE (not generated by LLM)")
+    
+    # Ensure README.md exists with basic content
+    if "README.md" not in files:
+        # Extract app name from the first file if available
+        app_name = "Web Application"
+        if "index.html" in files:
+            # Try to extract title from HTML
+            import re
+            title_match = re.search(r'<title>([^<]+)</title>', files["index.html"], re.IGNORECASE)
+            if title_match:
+                app_name = title_match.group(1)
+        
+        files["README.md"] = f"""# {app_name}
+
+Auto-generated web application.
+
+## Features
+
+- Modern, responsive design
+- Clean and intuitive interface
+- Production-ready code
+
+## Usage
+
+Open `index.html` in a web browser or visit the GitHub Pages deployment.
+
+## License
+
+MIT License - see LICENSE file for details.
+"""
+        logger.info("Added default README.md (not generated by LLM)")
     
     return files
 
