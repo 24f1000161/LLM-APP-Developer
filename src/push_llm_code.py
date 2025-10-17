@@ -71,9 +71,10 @@ async def _generate_with_openai(
         model_name="gpt-5-nano"
     )
     
-    # Create an agent for code generation
+    # Create an agent for code generation with str result type
     agent = Agent(
         model=model,
+        result_type=str,
         system_prompt=_get_system_prompt(is_revision),
     )
     
@@ -82,6 +83,7 @@ async def _generate_with_openai(
     
     # Call the agent asynchronously
     result = await agent.run(prompt)
+    # With result_type=str, result.data contains the string response
     response_text = result.data
     
     # Parse the response to extract generated files
@@ -109,9 +111,10 @@ async def _generate_with_gemini(
         model_name="gemini-2.5-flash"
     )
     
-    # Create an agent for code generation
+    # Create an agent for code generation with str result type
     agent = Agent(
         model=model,
+        result_type=str,
         system_prompt=_get_system_prompt(is_revision),
     )
     
@@ -120,6 +123,7 @@ async def _generate_with_gemini(
     
     # Call the agent asynchronously
     result = await agent.run(prompt)
+    # With result_type=str, result.data contains the string response
     response_text = result.data
     
     # Parse the response to extract generated files
