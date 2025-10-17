@@ -76,12 +76,11 @@ async def round2(request_data: dict) -> None:
         attachments = request_data.get("attachments", [])
         repo_url = request_data.get("repo_url")
         
-        # Derive repo URL from task ID if not provided
+        # Derive repo URL from task ID if not provided (matches Round 1 logic)
         if not repo_url:
+            from src.utils import derive_repo_name_from_task
             github_user = os.getenv("GITHUB_USER")
-            import hashlib
-            task_hash = hashlib.sha256(task.encode()).hexdigest()[:8]
-            repo_name = f"{task[:15]}-{task_hash}".lower().replace("_", "-")
+            repo_name = derive_repo_name_from_task(task)
             repo_url = f"https://github.com/{github_user}/{repo_name}"
             logger.info(f"Derived repo URL from task: {repo_url}")
         

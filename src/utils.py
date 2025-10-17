@@ -198,3 +198,68 @@ def safe_filename(text: str, max_length: int = 50) -> str:
     safe = safe[:max_length]
     
     return safe or "unnamed"
+
+
+def derive_repo_name_from_task(task_id: str) -> str:
+    """
+    Derive repository name from task ID in a deterministic way.
+    
+    This function MUST produce the same result for the same task ID
+    across Round 1 (repo creation) and Round 2 (repo lookup).
+    
+    Args:
+        task_id: Task identifier from instructor (e.g., "sum-of-sales-abc12")
+    
+    Returns:
+        str: Sanitized repo name with hash suffix (e.g., "sum-of-sales-a-d4f7a1b2")
+    
+    Example:
+        >>> derive_repo_name_from_task("sum-of-sales-abc12")
+        'sum-of-sales-a-d4f7a1b2'
+    """
+    import hashlib
+    
+    # Step 1: Sanitize the task ID
+    sanitized = sanitize_repo_name(task_id)
+    
+    # Step 2: Hash the sanitized name for uniqueness
+    task_hash = hashlib.sha256(sanitized.encode()).hexdigest()[:8]
+    
+    # Step 3: Combine (truncate to 15 chars + hash)
+    repo_name = f"{sanitized[:15]}-{task_hash}"
+    
+    return repo_name
+
+
+def sanitize_repo_name(name: str) -> str:
+    """
+    Sanitize a string to be a valid GitHub repository name.
+    
+    GitHub repo names must:
+    - Contain only alphanumeric, hyphens, underscores
+    - Not start or end with hyphens
+    - Not have consecutive hyphens
+    
+    Args:
+        name: Raw name to sanitize
+    
+    Returns:
+        str: Sanitized lowercase name
+    
+    Example:
+        >>> sanitize_repo_name("Sum_of_Sales@2024!")
+        'sum-of-sales-2024'
+    """
+    import re
+    
+    # Replace invalid characters with hyphens
+    name = re.sub(r'[^a-zA-Z0-9_-]', '-', name)
+    
+    # Remove leading/trailing hyphens
+    name = name.strip('-')
+    
+    # Collapse multiple hyphens into one
+    name = re.sub(r'-+', '-', name)
+    
+    # Convert to lowercase
+    return name.lower()

@@ -4,6 +4,7 @@ import requests
 import subprocess
 import logging
 from pathlib import Path
+from src.utils import derive_repo_name_from_task
 
 logger = logging.getLogger(__name__)
 
@@ -19,24 +20,14 @@ def create_github_repo(repo_name: str, email: str) -> tuple:
     Returns:
         tuple: (repo_url, clone_url)
     """
-    import hashlib
-    import re
-    
     github_token = os.getenv("GITHUB_TOKEN")
     github_user = os.getenv("GITHUB_USER")
     
     if not github_token or not github_user:
         raise ValueError("GITHUB_TOKEN and GITHUB_USER environment variables are required")
     
-    # Sanitize repo name: remove special chars, ensure valid format
-    repo_name = re.sub(r'[^a-zA-Z0-9_-]', '-', repo_name)
-    repo_name = repo_name.strip('-')
-    repo_name = re.sub(r'-+', '-', repo_name)
-    repo_name = repo_name.lower()
-    
-    # Add hash suffix for uniqueness (prevents collisions)
-    task_hash = hashlib.sha256(repo_name.encode()).hexdigest()[:8]
-    repo_name = f"{repo_name[:15]}-{task_hash}"
+    # Use centralized repo name derivation (ensures Round 2 can find this repo)
+    repo_name = derive_repo_name_from_task(repo_name)
     
     headers = {
         "Authorization": f"token {github_token}",
