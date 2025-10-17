@@ -1,43 +1,15 @@
-# LLM App Developer - Student Side
+# LLM App Developer
 
-A FastAPI application that enables students to build and deploy web applications using LLM-assisted code generation with **Pydantic AI** and **OpenAI's GPT-5-nano**. This is the **student-side** implementation that receives tasks, generates code, and deploys to GitHub Pages.
+A FastAPI application that generates and deploys web applications using OpenAI's GPT-5-nano. This server receives task requests from an evaluation platform, generates complete web applications, deploys them to GitHub Pages, and notifies the evaluation server with the results.
 
 ## Overview
 
-This project implements the **Build** and **Revise** phases of an automated code deployment system:
+This project automates the process of building and deploying web applications:
 
-1. **Build Phase (Round 1)**: 
-   - Receives a task request with brief and requirements
-   - Generates a complete web application using OpenAI's GPT-5-nano
-   - Creates a GitHub repository
-   - Deploys to GitHub Pages
-   - Notifies the evaluation server
+- **Round 1 (Build)**: Receives a task, generates complete web app code, creates GitHub repo, deploys to Pages
+- **Round 2 (Revise)**: Updates existing app based on feedback, re-deploys changes
 
-2. **Revise Phase (Round 2)**:
-   - Receives a revision request with updated requirements
-   - Updates the existing application based on feedback
-   - Re-deploys to GitHub Pages
-   - Notifies the evaluation server of changes
-
-## Architecture
-
-```
-main.py
-├── /api/submit (POST)
-│   ├── Validates secret
-│   ├── Routes to round1() or round2()
-│   └── Returns status
-│
-src/
-├── round1.py          # Round 1 task handler
-├── round2.py          # Round 2 revision handler
-├── create_repo.py     # GitHub repository creation
-├── push_llm_code.py   # LLM-based code generation
-├── enable_github_pages.py  # GitHub Pages configuration
-└── validate_secrets.py # Secret validation
-```
-
-## Setup
+## Quick Start
 
 ### Prerequisites
 
@@ -48,39 +20,36 @@ src/
 
 ### Installation
 
-1. **Clone and navigate to the project:**
-   ```bash
-   cd llm-app-developer
-   ```
+```bash
+# Clone the repository
+cd llm-app-developer
 
-2. **Create a virtual environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-3. **Install dependencies:**
-   ```bash
-   pip install -e .
-   ```
+# Install dependencies
+pip install -e .
+```
 
-4. **Configure environment variables:**
-   Create a `.env` file with:
-   ```
-   STUDENT_SECRET=your-student-secret
-   GITHUB_TOKEN=your-github-pat-token
-   GITHUB_USER=your-github-username
-   OPENAI_API_KEY=your-openai-api-key
-   HOST=0.0.0.0
-   PORT=8000
-   ```
+### Configuration
 
-   **Environment Variables Explanation:**
-   - `STUDENT_SECRET`: Secret shared with the evaluation server (for verification)
-   - `GITHUB_TOKEN`: GitHub Personal Access Token (with repo, delete_repo, write:packages scopes)
-   - `GITHUB_USER`: Your GitHub username
-   - `OPENAI_API_KEY`: OpenAI API key from https://platform.openai.com/api-keys
-   - `HOST`, `PORT`: Server configuration
+Create a `.env` file:
+
+```env
+STUDENT_SECRET=your-student-secret
+GITHUB_TOKEN=your-github-pat-token
+GITHUB_USER=your-github-username
+OPENAI_API_KEY=your-openai-api-key
+HOST=0.0.0.0
+PORT=8000
+```
+
+**Environment Variables:**
+- `STUDENT_SECRET`: Secret for request verification
+- `GITHUB_TOKEN`: GitHub Personal Access Token (with repo, delete_repo scopes)
+- `GITHUB_USER`: Your GitHub username
+- `OPENAI_API_KEY`: OpenAI API key from https://platform.openai.com/api-keys
 
 ### Running the Server
 
@@ -88,55 +57,46 @@ src/
 python main.py
 ```
 
-The server will start at `http://0.0.0.0:8000`
+Server will be available at `http://localhost:8000`
 
-Access the API documentation at: `http://localhost:8000/docs`
+API documentation: http://localhost:8000/docs
 
 ## API Endpoints
 
 ### POST /submit
 
-Accepts task requests from the evaluation server.
+Main endpoint for task requests.
 
-**Request Payload:**
+**Request:**
 ```json
 {
   "email": "student@example.com",
   "secret": "your-shared-secret",
-  "task": "captcha-solver-abc123",
+  "task": "task-id-123",
   "round": 1,
-  "nonce": "ab12-cd34-ef56",
-  "brief": "Create a captcha solver...",
-  "checks": [
-    "Repo has MIT license",
-    "README.md is professional",
-    "Page displays captcha image"
-  ],
+  "nonce": "unique-nonce",
+  "brief": "Create a web app that...",
+  "checks": ["Must have MIT license", "Should use Bootstrap 5"],
   "evaluation_url": "https://example.com/notify",
-  "attachments": [
-    {
-      "name": "sample.png",
-      "url": "data:image/png;base64,iVBORw0KGgoAAAANS..."
-    }
-  ]
+  "attachments": []
 }
 ```
 
-**Success Response (200):**
+**Response (Success):**
 ```json
 {
   "status": "success",
-  "repo_url": "https://github.com/username/task-abc123",
-  "pages_url": "https://username.github.io/task-abc123/",
-  "commit_sha": "abc123def456..."
+  "repo_url": "https://github.com/username/task-123",
+  "pages_url": "https://username.github.io/task-123/",
+  "commit_sha": "abc123def..."
 }
 ```
 
-**Error Response (400/401/500):**
+**Response (Error):**
 ```json
 {
   "status": "error",
-  "message": "Description of the error"
+  "message": "Error description"
 }
 ```
 
@@ -144,231 +104,101 @@ Accepts task requests from the evaluation server.
 
 Health check endpoint.
 
-**Response:**
 ```json
 {
   "status": "healthy",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "timestamp": "2025-10-17T10:30:00+00:00",
+  "secrets_configured": {
+    "github_token": true,
+    "openai_key": true,
+    "student_secret": true
+  }
 }
 ```
 
 ### GET /
 
-API information endpoint.
+API information and available endpoints.
+
+## How It Works
+
+1. **Evaluation server** sends a task request to `/submit`
+2. **Your server** validates the request and secret
+3. **LLM generates** complete web app code (HTML, CSS, JavaScript)
+4. **GitHub repo** is created and code is committed
+5. **GitHub Pages** is enabled for hosting
+6. **Evaluation server** is notified with repository details
+7. **App is live** at `https://{username}.github.io/{repo-name}/`
 
 ## Features
 
-### Round 1: Build Phase
+- ✅ Automatic code generation using OpenAI GPT-5-nano
+- ✅ GitHub repository creation and management
+- ✅ Automatic GitHub Pages deployment
+- ✅ Secret validation with timing attack protection
+- ✅ Comprehensive error handling and logging
+- ✅ Fallback to Google Gemini if OpenAI fails
+- ✅ Support for file attachments (base64 encoded)
 
-1. **Request Validation**
-   - Verifies all required fields
-   - Validates secret against `STUDENT_SECRET`
+## Project Structure
 
-2. **Code Generation**
-   - Sends task brief and requirements to OpenAI API
-   - Generates HTML, CSS, JavaScript, README, and LICENSE
-   - Handles data URI attachments (base64 encoded)
+```
+main.py                    # FastAPI application entry point
+src/
+├── round1.py             # Build phase handler
+├── round2.py             # Revise phase handler
+├── create_repo.py        # GitHub repository management
+├── push_llm_code.py      # LLM code generation
+├── enable_github_pages.py # GitHub Pages configuration
+├── validate_secrets.py   # Secret validation
+├── config.py             # Configuration management
+└── utils.py              # Utility functions
+```
 
-3. **Repository Management**
-   - Creates public GitHub repository
-   - Initializes with MIT license
-   - Configures git with student email
+## Security
 
-4. **Code Deployment**
-   - Writes generated files and attachments to repo
-   - Commits with descriptive messages
-   - Pushes to GitHub main branch
-
-5. **GitHub Pages**
-   - Enables GitHub Pages for the repository
-   - Configures to deploy from main branch root
-
-6. **Evaluation Notification**
-   - POSTs repository details to evaluation server
-   - Includes repo URL, commit SHA, and Pages URL
-   - Retries with exponential backoff on failure
-
-### Round 2: Revise Phase
-
-1. **Clones existing repository** from Round 1
-2. **Generates updated code** based on revision brief
-3. **Pushes changes** to the same repository
-4. **Notifies evaluation server** with updated commit SHA
-
-## Task Examples
-
-### Sum of Sales
-Students build a page that:
-- Fetches data from CSV attachment
-- Sums a sales column
-- Displays total in an element
-- Uses Bootstrap 5
-
-### Markdown to HTML
-Students build a page that:
-- Converts Markdown to HTML using marked.js
-- Highlights code blocks with highlight.js
-- Renders in a designated container
-
-### GitHub User Info
-Students build a page that:
-- Fetches GitHub user data via API
-- Displays account creation date
-- Supports optional ?token= parameter
-- Uses Bootstrap for styling
-
-## Code Quality
-
-The generated applications follow these principles:
-
-- **Minimal and Clean**: Only necessary code, no bloat
-- **Well-Commented**: Clear explanations of functionality
-- **Error Handling**: User feedback on failures
-- **Responsive Design**: Works on mobile and desktop
-- **Bootstrap 5**: Professional, consistent styling
-- **Standards-Compliant**: Valid HTML5, CSS3, ES6+
-
-## Security Considerations
-
-1. **Secret Validation**: Uses constant-time comparison to prevent timing attacks
-2. **Token Protection**: GitHub token never exposed in logs or responses
-3. **Secure Git Operations**: Uses HTTPS with token authentication
-4. **No Hardcoded Secrets**: All credentials via environment variables
-5. **Repository Safety**: Public repos minimize security issues, checked for secrets
+- **Secret Validation**: Uses constant-time comparison to prevent timing attacks
+- **Token Protection**: GitHub tokens never exposed in logs
+- **Environment Variables**: All credentials via `.env` (never hardcoded)
+- **HTTPS**: Secure communication with GitHub API and OpenAI
 
 ## Error Handling
 
-The system includes comprehensive error handling:
+The application handles errors gracefully:
 
-- **Invalid requests**: 400 Bad Request
-- **Authentication failures**: 401 Unauthorized
-- **Server errors**: 500 Internal Server Error with detailed logging
-- **GitHub API errors**: Caught and reported clearly
-- **LLM API errors**: Graceful fallback with error message
+- Invalid requests → 400 Bad Request
+- Authentication failures → 401 Unauthorized
+- Server errors → 500 Internal Server Error with logging
+- API failures → Automatic fallback and retry with exponential backoff
 
-Logs are written to console with timestamps and severity levels.
+All errors are logged to console with timestamps.
 
-## Deployment
+## Troubleshooting
 
-### Local Development
+**"Invalid secret"**
+- Verify `STUDENT_SECRET` in `.env` matches what was provided
+- Check for extra whitespace in the environment variable
 
-```bash
-python main.py
-```
+**"GitHub token expired"**
+- Regenerate token at https://github.com/settings/tokens
+- Ensure token has required scopes: `repo`, `delete_repo`
 
-### Production Deployment
+**"OPENAI_API_KEY not set"**
+- Check `.env` file exists in project root
+- Verify API key is correct and has remaining quota
 
-Using Gunicorn + Uvicorn:
-
-```bash
-pip install gunicorn
-gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
-```
-
-### Docker Deployment
-
-Create `Dockerfile`:
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-COPY . .
-
-RUN pip install -e .
-
-ENV HOST=0.0.0.0
-ENV PORT=8000
-
-CMD ["python", "main.py"]
-```
-
-Build and run:
-```bash
-docker build -t llm-app-developer .
-docker run -p 8000:8000 \
-  -e STUDENT_SECRET=your-secret \
-  -e GITHUB_TOKEN=your-token \
-  -e GITHUB_USER=your-user \
-  -e OPENAI_API_KEY=your-key \
-  llm-app-developer
-```
-
-## Workflow
-
-```
-┌─────────────────────────────────────┐
-│  Evaluation Server Sends Request    │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│  Student Server (/submit endpoint)  │
-│  - Validate secret                  │
-│  - Parse attachments                │
-└──────────────┬──────────────────────┘
-               │
-        ┌──────┴──────┐
-        │             │
-        ▼             ▼
-   Round 1        Round 2
-   (Build)        (Revise)
-        │             │
-        ▼             ▼
-   ┌─────────────────────────────────┐
-   │ Generate code with Claude LLM   │
-   └──────────────┬──────────────────┘
-                  │
-                  ▼
-   ┌─────────────────────────────────┐
-   │ Create/Update GitHub Repo       │
-   │ - Create repo (Round 1)         │
-   │ - Clone repo (Round 2)          │
-   └──────────────┬──────────────────┘
-                  │
-                  ▼
-   ┌─────────────────────────────────┐
-   │ Write files & commit            │
-   │ - HTML, CSS, JS                 │
-   │ - README.md                     │
-   │ - LICENSE (MIT)                 │
-   │ - Attachments                   │
-   └──────────────┬──────────────────┘
-                  │
-                  ▼
-   ┌─────────────────────────────────┐
-   │ Push to GitHub & Enable Pages   │
-   └──────────────┬──────────────────┘
-                  │
-                  ▼
-   ┌─────────────────────────────────┐
-   │ POST to Evaluation Server       │
-   │ - repo_url                      │
-   │ - pages_url                     │
-   │ - commit_sha                    │
-   └──────────────┬──────────────────┘
-                  │
-                  ▼
-   ┌─────────────────────────────────┐
-   │ Return 200 Success to Student   │
-   └─────────────────────────────────┘
-```
+**"Port already in use"**
+- Change `PORT` in `.env` to a different port (e.g., 8001)
+- Or kill existing process: `lsof -i :8000` (Unix) / `netstat -ano` (Windows)
 
 ## License
 
-MIT License - See LICENSE file in generated repositories
-
-## Support
-
-For issues or questions:
-1. Check the logs in the console output
-2. Verify environment variables are set correctly
-3. Ensure GitHub token has required permissions
-4. Check that OpenAI API key is valid
-5. Review the FastAPI documentation at `/docs`
+MIT License
 
 ## References
 
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [GitHub API Reference](https://docs.github.com/en/rest)
-- [OpenAI API Documentation](https://platform.openai.com/docs/)
+- [FastAPI Docs](https://fastapi.tiangolo.com/)
+- [OpenAI API](https://platform.openai.com/docs/)
 - [GitHub Pages](https://pages.github.com/)
+- [GitHub API](https://docs.github.com/en/rest)
