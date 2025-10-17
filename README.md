@@ -8,7 +8,7 @@ This project implements the **Build** and **Revise** phases of an automated code
 
 1. **Build Phase (Round 1)**: 
    - Receives a task request with brief and requirements
-   - Generates a complete web application using Claude LLM
+   - Generates a complete web application using OpenAI's GPT-5-nano
    - Creates a GitHub repository
    - Deploys to GitHub Pages
    - Notifies the evaluation server
@@ -351,27 +351,6 @@ docker run -p 8000:8000 \
    ┌─────────────────────────────────┐
    │ Return 200 Success to Student   │
    └─────────────────────────────────┘
-```
-
-## Testing
-
-### Test the Endpoint
-
-Using curl:
-```bash
-curl -X POST http://localhost:8000/submit \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "secret": "your-secret",
-    "task": "test-task-001",
-    "round": 1,
-    "nonce": "test-nonce",
-    "brief": "Create a simple calculator web app",
-    "checks": ["Has MIT license", "Displays calculator"],
-    "evaluation_url": "https://example.com/notify",
-    "attachments": []
-  }'
 ```
 
 ## License
