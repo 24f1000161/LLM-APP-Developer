@@ -1,67 +1,134 @@
-# make a fastapi app
-from fastapi import FastAPI
+# FastAPI application for LLM-assisted code generation and deployment
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
+from typing import List, Optional
+import os
+import logging
 from src.validate_secrets import validate_secret
-app = FastAPI()
+from src.round1 import round1
+from src.round2 import round2
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+# Pydantic models for request validation
+class AttachmentModel(BaseModel):
+    name: str = Field(..., description="File name")
+    url: str = Field(..., description="Data URI or file URL")
+
+
+class TaskRequest(BaseModel):
+    email: str = Field(..., description="Student email")
+    secret: str = Field(..., description="Authentication secret")
+    task: str = Field(..., description="Task identifier")
+    round: int = Field(..., ge=1, le=2, description="Round number (1 or 2)")
+    nonce: str = Field(..., description="Unique nonce")
+    brief: str = Field(..., description="Task description/brief")
+    checks: Optional[List[str]] = Field(default=[], description="Validation checks")
+    evaluation_url: str = Field(..., description="URL to notify evaluation server")
+    attachments: Optional[List[AttachmentModel]] = Field(default=[], description="File attachments")
+
+
+class SuccessResponse(BaseModel):
+    status: str = Field(default="success")
+    message: str = Field(...)
+    repo_url: str = Field(...)
+    pages_url: str = Field(...)
+    commit_sha: str = Field(...)
+
+
+class ErrorResponse(BaseModel):
+    status: str = Field(default="error")
+    message: str = Field(...)
+
+
+app = FastAPI(title="LLM App Developer", version="1.0.0")
 
 # Add CORS middleware to allow requests from any origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# post endpoint to read from json given in the format
-#  {
-#   // Student email ID
-#   "email": "student@example.com",
-#   // Student-provided secret
-#   "secret": "...",
-#   // A unique task ID.
-#   "task": "captcha-solver-...",
-#   // There will be multiple rounds per task. This is the round index
-#   "round": 1,
-#   // Pass this nonce back to the evaluation URL below
-#   "nonce": "ab12-...",
-#   // brief: mentions what the app needs to do
-#   "brief": "Create a captcha solver that handles ?url=https://.../image.png. Default to attached sample.",
-#   // checks: mention how it will be evaluated
-#   "checks": [
-#     "Repo has MIT license"
-#     "README.md is professional",
-#     "Page displays captcha URL passed at ?url=...",
-#     "Page displays solved captcha text within 15 seconds",
-#   ],
-#   // Send repo & commit details to the URL below
-#   "evaluation_url": "https://example.com/notify",
-#   // Attachments will be encoded as data URIs
-#   "attachments": [{ "name": "sample.png", "url": "data:image/png;base64,iVBORw..." }]
-# }
 
-@app.post("/submit")
-async def submit(data: dict):
-    # get the data from the json
+@app.post("/submit", response_model=SuccessResponse)
+async def submit(task_request: TaskRequest):
+    """
+    Accept task requests from the evaluation server and process them.
     
-    # validate the secret
-    if not validate_secret(data.get("secret", "")):
-        return {"error": "Invalid secret"}
-    
-    # check the rounds
-    if data.get('round') == 1:
-        pass
+    Returns repo URL, Pages URL, and commit SHA on success.
+    """
+    try:
+        data = task_request.model_dump()
+        logger.info(f"Received request: email={data.get('email')}, round={data.get('round')}")
+        
+        # Validate the secret
+        if not validate_secret(data.get("secret", "")):
+            logger.warning(f"Invalid secret for {data.get('email')}")
+            raise HTTPException(status_code=401, detail="Invalid secret")
+        
+        # Process based on round
+        round_num = data.get("round")
+        
+        if round_num == 1:
+            logger.info(f"Processing Round 1 for {data.get('email')}")
+            result = await round1(data)
+        elif round_num == 2:
+            logger.info(f"Processing Round 2 for {data.get('email')}")
+            result = await round2(data)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid round number")
+        
+        if result.get("status") == "error":
+            logger.error(f"Processing failed: {result.get('message')}")
+            raise HTTPException(status_code=500, detail=result.get('message'))
+        
+        logger.info(f"Successfully processed request for {data.get('email')}")
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
-    if data.get('round') == 2:
-        pass
+
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
+    return {"status": "healthy", "version": "1.0.0"}
 
 
-
-    print(data)
-    # Return a simple JSON response
-    return {"status": "received", "data": data}
+@app.get("/")
+async def root():
+    """Root endpoint with API information."""
+    return {
+        "name": "LLM App Developer",
+        "version": "1.0.0",
+        "endpoints": {
+            "POST /submit": "Process task requests (Round 1 or 2)",
+            "GET /health": "Health check",
+        },
+        "documentation": "/docs",
+    }
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", 8000))
+    
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="info",
+    )
