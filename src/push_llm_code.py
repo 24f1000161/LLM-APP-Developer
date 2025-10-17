@@ -11,7 +11,7 @@ from pydantic_ai import Agent
 logger = logging.getLogger(__name__)
 
 
-def generate_app_with_llm(
+async def generate_app_with_llm(
     brief: str,
     checks: list,
     attachments: Dict[str, bytes],
@@ -35,7 +35,7 @@ def generate_app_with_llm(
     # Try OpenAI first
     try:
         logger.info("Attempting to generate code with OpenAI GPT-5-nano...")
-        files = _generate_with_openai(brief, checks, attachments, is_revision)
+        files = await _generate_with_openai(brief, checks, attachments, is_revision)
         logger.info("Successfully generated code with OpenAI")
         return files
     except Exception as e:
@@ -44,7 +44,7 @@ def generate_app_with_llm(
     # Fallback to Gemini
     try:
         logger.info("Attempting to generate code with Gemini...")
-        files = _generate_with_gemini(brief, checks, attachments, is_revision)
+        files = await _generate_with_gemini(brief, checks, attachments, is_revision)
         logger.info("Successfully generated code with Gemini (fallback)")
         return files
     except Exception as e:
@@ -52,7 +52,7 @@ def generate_app_with_llm(
         raise Exception(f"Code generation failed with both providers: {str(e)}")
 
 
-def _generate_with_openai(
+async def _generate_with_openai(
     brief: str,
     checks: list,
     attachments: Dict[str, bytes],
@@ -80,8 +80,8 @@ def _generate_with_openai(
     # Build the user prompt
     prompt = _build_user_prompt(brief, checks, attachments, is_revision)
     
-    # Call the agent
-    result = agent.run_sync(prompt)
+    # Call the agent asynchronously
+    result = await agent.run(prompt)
     response_text = result.data
     
     # Parse the response to extract generated files
@@ -90,7 +90,7 @@ def _generate_with_openai(
     return files
 
 
-def _generate_with_gemini(
+async def _generate_with_gemini(
     brief: str,
     checks: list,
     attachments: Dict[str, bytes],
@@ -99,11 +99,11 @@ def _generate_with_gemini(
     """Generate code using Google Gemini as fallback."""
     from pydantic_ai.models.gemini import GeminiModel
     
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    api_key = os.getenv("GOOGLE_API_KEY", "").strip()
     if not api_key:
-        raise ValueError("GEMINI_API_KEY not configured")
+        raise ValueError("GOOGLE_API_KEY not configured")
     
-    # pydantic-ai uses GEMINI_API_KEY from environment
+    # pydantic-ai uses GOOGLE_API_KEY from environment
     # Initialize the model without api_key parameter
     model = GeminiModel(
         model_name="gemini-2.5-flash"
@@ -118,8 +118,8 @@ def _generate_with_gemini(
     # Build the user prompt
     prompt = _build_user_prompt(brief, checks, attachments, is_revision)
     
-    # Call the agent
-    result = agent.run_sync(prompt)
+    # Call the agent asynchronously
+    result = await agent.run(prompt)
     response_text = result.data
     
     # Parse the response to extract generated files

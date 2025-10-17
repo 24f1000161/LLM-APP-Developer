@@ -54,8 +54,8 @@ async def round2(request_data: dict) -> dict:
         # Clone the existing repo
         clone_dir = clone_existing_repo(repo_url, task)
         
-        # Generate updated app code using LLM (with context of previous round)
-        app_code = generate_app_with_llm(
+        # Generate updated app code using LLM (with context of previous round) (async)
+        app_code = await generate_app_with_llm(
             brief,
             checks,
             attachment_files,

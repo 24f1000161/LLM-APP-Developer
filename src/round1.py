@@ -54,8 +54,8 @@ async def round1(request_data: dict) -> dict:
                 response = requests.get(url)
                 attachment_files[name] = response.content
         
-        # Generate app code using LLM
-        app_code = generate_app_with_llm(brief, checks, attachment_files)
+        # Generate app code using LLM (async)
+        app_code = await generate_app_with_llm(brief, checks, attachment_files)
         
         # Create GitHub repo
         repo_name = f"{task[:20]}"  # Use first 20 chars of task as repo name
