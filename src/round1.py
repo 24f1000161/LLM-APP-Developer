@@ -103,8 +103,10 @@ async def round1(request_data: dict) -> None:
         # Generate app code using LLM (async)
         app_code = await generate_app_with_llm(brief, checks, attachment_files)
         
-        # Create GitHub repo
-        repo_name = f"{task[:20]}"  # Use first 20 chars of task as repo name
+        # Create GitHub repo using same derivation logic as Round 2
+        from src.utils import derive_repo_name_from_task
+        repo_name = derive_repo_name_from_task(task)
+        logger.info(f"Round 1: Derived repo name '{repo_name}' from task '{task}'")
         repo_url, clone_url = create_github_repo(repo_name, email)
         
         # Push code to repository

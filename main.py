@@ -39,7 +39,7 @@ class TaskRequest(BaseModel):
     checks: Optional[List[str]] = Field(default=[], description="Validation checks")
     evaluation_url: str = Field(..., description="URL to notify evaluation server")
     attachments: Optional[List[AttachmentModel]] = Field(default=[], description="File attachments")
-    repo_url: Optional[str] = Field(default=None, description="Repository URL (Round 2 only)")
+    # Note: repo_url is NOT sent by IITM, it must be derived from task ID in both rounds
 
 
 class ImmediateResponse(BaseModel):

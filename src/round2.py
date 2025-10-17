@@ -74,17 +74,14 @@ async def round2(request_data: dict) -> None:
         checks = request_data.get("checks", [])
         evaluation_url = request_data.get("evaluation_url")
         attachments = request_data.get("attachments", [])
-        repo_url = request_data.get("repo_url")
         
-        # Derive repo URL from task ID if not provided (matches Round 1 logic)
-        if not repo_url:
-            from src.utils import derive_repo_name_from_task
-            github_user = os.getenv("GITHUB_USER")
-            repo_name = derive_repo_name_from_task(task)
-            repo_url = f"https://github.com/{github_user}/{repo_name}"
-            logger.warning(f"repo_url not provided in request, derived from task: {repo_url}")
-        else:
-            logger.info(f"Using provided repo_url: {repo_url}")
+        # CRITICAL: IITM does NOT send repo_url
+        # We must derive it from task ID (same logic as Round 1)
+        from src.utils import derive_repo_name_from_task
+        github_user = os.getenv("GITHUB_USER")
+        repo_name = derive_repo_name_from_task(task)
+        repo_url = f"https://github.com/{github_user}/{repo_name}"
+        logger.info(f"Derived repo_url from task ID: {repo_url}")
         
         logger.info(f"Processing revision request for {email}, task: {task}")
         
