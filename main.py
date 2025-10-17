@@ -1,5 +1,5 @@
 # FastAPI application for LLM-assisted code generation and deployment
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -41,12 +41,8 @@ class TaskRequest(BaseModel):
     attachments: Optional[List[AttachmentModel]] = Field(default=[], description="File attachments")
 
 
-class SuccessResponse(BaseModel):
-    status: str = Field(default="success")
-    message: str = Field(...)
-    repo_url: str = Field(...)
-    pages_url: str = Field(...)
-    commit_sha: str = Field(...)
+class ImmediateResponse(BaseModel):
+    usercode: str = Field(..., description="Student email/usercode")
 
 
 class ErrorResponse(BaseModel):
@@ -104,40 +100,42 @@ app.add_middleware(
 
 
 
-@app.post("/submit", response_model=SuccessResponse)
-async def submit(task_request: TaskRequest):
+@app.post("/submit", response_model=ImmediateResponse)
+async def submit(task_request: TaskRequest, background_tasks: BackgroundTasks):
     """
-    Accept task requests from the evaluation server and process them.
+    Accept task requests from the evaluation server and respond immediately.
     
-    Returns repo URL, Pages URL, and commit SHA on success.
+    Per spec: "must immediately reply with a 200 OK and a JSON response 
+    containing {"usercode": "..."}". Processing happens in background,
+    and results are POSTed to evaluation_url separately.
+    
+    Returns usercode immediately (< 2 seconds).
     """
     try:
         data = task_request.model_dump()
-        logger.info(f"Received request: email={data.get('email')}, round={data.get('round')}")
+        email = data.get('email')
+        round_num = data.get('round')
         
-        # Validate the secret
+        logger.info(f"Received request: email={email}, round={round_num}")
+        
+        # Validate the secret immediately
         if not validate_secret(data.get("secret", "")):
-            logger.warning(f"Invalid secret for {data.get('email')}")
+            logger.warning(f"Invalid secret for {email}")
             raise HTTPException(status_code=401, detail="Invalid secret")
         
-        # Process based on round
-        round_num = data.get("round")
-        
+        # Queue background processing (non-blocking)
         if round_num == 1:
-            logger.info(f"Processing Round 1 for {data.get('email')}")
-            result = await round1(data)
+            logger.info(f"Queuing Round 1 processing for {email}")
+            background_tasks.add_task(round1, data)
         elif round_num == 2:
-            logger.info(f"Processing Round 2 for {data.get('email')}")
-            result = await round2(data)
+            logger.info(f"Queuing Round 2 processing for {email}")
+            background_tasks.add_task(round2, data)
         else:
             raise HTTPException(status_code=400, detail="Invalid round number")
         
-        if result.get("status") == "error":
-            logger.error(f"Processing failed: {result.get('message')}")
-            raise HTTPException(status_code=500, detail=result.get('message'))
-        
-        logger.info(f"Successfully processed request for {data.get('email')}")
-        return result
+        # Return immediately with usercode
+        logger.info(f"Responding immediately to {email} (background processing queued)")
+        return ImmediateResponse(usercode=email)
         
     except HTTPException:
         raise

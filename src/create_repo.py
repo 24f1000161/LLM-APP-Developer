@@ -13,20 +13,30 @@ def create_github_repo(repo_name: str, email: str) -> tuple:
     Create a new GitHub repository using the GitHub API.
     
     Args:
-        repo_name: Name for the new repository
+        repo_name: Name for the new repository (will be sanitized and hashed)
         email: Student email (for reference/documentation)
     
     Returns:
         tuple: (repo_url, clone_url)
     """
+    import hashlib
+    import re
+    
     github_token = os.getenv("GITHUB_TOKEN")
     github_user = os.getenv("GITHUB_USER")
     
     if not github_token or not github_user:
         raise ValueError("GITHUB_TOKEN and GITHUB_USER environment variables are required")
     
-    # Ensure repo name is lowercase and contains only alphanumeric and hyphens
-    repo_name = repo_name.lower().replace("_", "-")
+    # Sanitize repo name: remove special chars, ensure valid format
+    repo_name = re.sub(r'[^a-zA-Z0-9_-]', '-', repo_name)
+    repo_name = repo_name.strip('-')
+    repo_name = re.sub(r'-+', '-', repo_name)
+    repo_name = repo_name.lower()
+    
+    # Add hash suffix for uniqueness (prevents collisions)
+    task_hash = hashlib.sha256(repo_name.encode()).hexdigest()[:8]
+    repo_name = f"{repo_name[:15]}-{task_hash}"
     
     headers = {
         "Authorization": f"token {github_token}",

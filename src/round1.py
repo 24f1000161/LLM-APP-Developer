@@ -5,6 +5,7 @@ import base64
 import requests
 import subprocess
 import logging
+import time
 from pathlib import Path
 from datetime import datetime
 from src.create_repo import create_github_repo
@@ -14,16 +15,61 @@ from src.enable_github_pages import enable_github_pages
 logger = logging.getLogger(__name__)
 
 
-async def round1(request_data: dict) -> dict:
+def wait_for_pages_deployment(pages_url: str, max_wait: int = 180) -> bool:
     """
-    Handle round 1 requests:
-    1. Validate the request
-    2. Generate app code using LLM
-    3. Create GitHub repo
-    4. Push code to repo
-    5. Enable GitHub Pages
-    6. Notify the evaluation API
+    Poll GitHub Pages URL until it returns 200 OK or timeout.
+    
+    GitHub Pages can take 30-120 seconds to deploy after enabling.
+    This ensures the page is accessible before notifying evaluation server.
+    
+    Args:
+        pages_url: GitHub Pages URL to check
+        max_wait: Maximum seconds to wait (default: 180)
+    
+    Returns:
+        bool: True if page is accessible, False if timeout
     """
+    logger.info(f"Waiting for GitHub Pages deployment: {pages_url}")
+    start = time.time()
+    attempt = 0
+    
+    while time.time() - start < max_wait:
+        attempt += 1
+        try:
+            response = requests.get(pages_url, timeout=10, allow_redirects=True)
+            if response.status_code == 200:
+                elapsed = int(time.time() - start)
+                logger.info(f"✓ Pages deployed successfully after {elapsed}s (attempt {attempt})")
+                return True
+            else:
+                logger.debug(f"Pages returned {response.status_code} (attempt {attempt})")
+        except Exception as e:
+            logger.debug(f"Pages check failed (attempt {attempt}): {str(e)}")
+        
+        # Wait 10 seconds between checks
+        time.sleep(10)
+    
+    elapsed = int(time.time() - start)
+    logger.error(f"✗ Pages not reachable after {elapsed}s ({attempt} attempts)")
+    return False
+
+
+async def round1(request_data: dict) -> None:
+    """
+    Handle round 1 requests in background (no return value).
+    
+    Steps:
+    1. Generate app code using LLM
+    2. Create GitHub repo
+    3. Push code to repo
+    4. Enable GitHub Pages
+    5. Wait for Pages to be accessible
+    6. POST notification to evaluation API
+    
+    Results are sent via POST to evaluation_url, not returned.
+    """
+    request_start_time = datetime.now()
+    
     try:
         email = request_data.get("email")
         secret = request_data.get("secret")
@@ -70,6 +116,18 @@ async def round1(request_data: dict) -> dict:
         repo = repo_url.split("/")[-1]
         pages_url = enable_github_pages(owner, repo, github_token)
         
+        # Wait for Pages deployment to be accessible (max 2 minutes to stay within 10-min deadline)
+        # LLM generation: ~60s, Repo creation: ~10s, Pages wait: ~120s, Notification: ~5s = ~195s total
+        if not wait_for_pages_deployment(pages_url, max_wait=120):
+            logger.warning(f"Pages not reachable after 120s, notifying anyway: {pages_url}")
+        
+        # Check deadline (10 minutes)
+        elapsed_seconds = (datetime.now() - request_start_time).total_seconds()
+        if elapsed_seconds > 600:
+            logger.error(f"⚠️  DEADLINE EXCEEDED: {elapsed_seconds:.1f}s > 600s for {email}")
+        else:
+            logger.info(f"✓ Completed within deadline: {elapsed_seconds:.1f}s for {email}")
+        
         # Notify the evaluation API
         notification = {
             "email": email,
@@ -81,44 +139,63 @@ async def round1(request_data: dict) -> dict:
             "pages_url": pages_url,
         }
         
-        # Try to notify evaluation API with retries
-        max_retries = 3
+        # Try to notify evaluation API with exponential backoff retries (1s, 2s, 4s, 8s)
+        max_retries = 4
         for attempt in range(max_retries):
             try:
                 response = requests.post(
                     evaluation_url,
                     json=notification,
                     headers={"Content-Type": "application/json"},
-                    timeout=30,  # Increased from 10 to 30 seconds
+                    timeout=30,
                 )
                 
-                if response.status_code != 200:
-                    logger.warning(f"Evaluation API returned {response.status_code}")
-                else:
-                    logger.info(f"Successfully notified evaluation API")
+                if response.status_code == 200:
+                    logger.info(f"✓ Evaluation API notified successfully")
                     break
+                else:
+                    logger.warning(f"Evaluation API returned {response.status_code}")
+                    
             except requests.exceptions.Timeout:
                 logger.warning(f"Evaluation API timeout (attempt {attempt + 1}/{max_retries})")
-                if attempt == max_retries - 1:
-                    logger.error("Failed to notify evaluation API after all retries")
-                    # Don't fail the entire request just because notification failed
-                    # The repo and pages were created successfully
+                
             except Exception as e:
                 logger.error(f"Error notifying evaluation API: {str(e)}")
-                break
+            
+            # Exponential backoff: 1s, 2s, 4s, 8s (per spec)
+            if attempt < max_retries - 1:
+                delay = 2 ** attempt
+                logger.info(f"Retrying after {delay}s delay...")
+                time.sleep(delay)
+        else:
+            logger.error("Failed to notify evaluation API after all retries")
         
-        # Return success even if notification failed - the important work is done
-        return {
-            "status": "success",
-            "message": "Repository created and deployed successfully",
-            "repo_url": repo_url,
-            "pages_url": pages_url,
-            "commit_sha": commit_sha,
-        }
+        # Background task complete - no return value
+        logger.info(f"Round 1 completed for {email}: {repo_url}")
         
     except Exception as e:
-        logger.error(f"Error: {str(e)}", exc_info=True)
-        return {"status": "error", "message": str(e)}
+        logger.error(f"Round 1 failed for {email}: {str(e)}", exc_info=True)
+        
+        # Try to notify evaluation server of failure
+        try:
+            error_notification = {
+                "email": request_data.get("email"),
+                "task": request_data.get("task"),
+                "round": request_data.get("round"),
+                "nonce": request_data.get("nonce"),
+                "status": "error",
+                "error": str(e),
+            }
+            
+            requests.post(
+                request_data.get("evaluation_url"),
+                json=error_notification,
+                headers={"Content-Type": "application/json"},
+                timeout=30,
+            )
+            logger.info("Notified evaluation server of error")
+        except Exception as notify_error:
+            logger.error(f"Failed to notify evaluation server of error: {str(notify_error)}")
 
 
 def _decode_data_uri(data_uri: str) -> bytes:
