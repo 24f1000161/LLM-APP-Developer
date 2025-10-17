@@ -34,7 +34,7 @@ def generate_app_with_llm(
     
     # Try OpenAI first
     try:
-        logger.info("Attempting to generate code with OpenAI GPT-4o...")
+        logger.info("Attempting to generate code with OpenAI GPT-5-nano...")
         files = _generate_with_openai(brief, checks, attachments, is_revision)
         logger.info("Successfully generated code with OpenAI")
         return files
@@ -58,7 +58,7 @@ def _generate_with_openai(
     attachments: Dict[str, bytes],
     is_revision: bool,
 ) -> Dict[str, str]:
-    """Generate code using OpenAI GPT-4o."""
+    """Generate code using OpenAI GPT-5-nano."""
     from pydantic_ai.models.openai import OpenAIModel
     
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
@@ -67,7 +67,7 @@ def _generate_with_openai(
     
     # Initialize the model
     model = OpenAIModel(
-        model_name="gpt-4o",
+        model_name="gpt-5-nano",
         api_key=api_key
     )
     
@@ -367,7 +367,7 @@ def push_code_to_repo(
     
     if result.returncode == 0:
         # No changes
-        print("No changes to commit")
+        logger.info("No changes to commit")
         # Get the current HEAD SHA
         result = subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -405,6 +405,6 @@ def push_code_to_repo(
     )
     
     commit_sha = result.stdout.strip()
-    print(f"Pushed code to {repo_url} with commit {commit_sha}")
+    logger.info(f"Pushed code to {repo_url} with commit {commit_sha}")
     
     return commit_sha

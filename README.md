@@ -1,6 +1,6 @@
 # LLM App Developer - Student Side
 
-A FastAPI application that enables students to build and deploy web applications using LLM-assisted code generation with **Pydantic AI** and **OpenAI's GPT-4o**. This is the **student-side** implementation that receives tasks, generates code, and deploys to GitHub Pages.
+A FastAPI application that enables students to build and deploy web applications using LLM-assisted code generation with **Pydantic AI** and **OpenAI's GPT-5-nano**. This is the **student-side** implementation that receives tasks, generates code, and deploys to GitHub Pages.
 
 ## Overview
 
@@ -44,7 +44,7 @@ src/
 - Python 3.10+
 - Git
 - GitHub account with personal access token
-- Anthropic API key (for Claude)
+- OpenAI API key
 
 ### Installation
 
@@ -67,16 +67,16 @@ src/
 4. **Configure environment variables:**
    Create a `.env` file with:
    ```
-   SECRET_KEY=your-student-secret
+   STUDENT_SECRET=your-student-secret
    GITHUB_TOKEN=your-github-pat-token
    GITHUB_USER=your-github-username
-   ANTHROPIC_API_KEY=your-anthropic-api-key
+   OPENAI_API_KEY=your-openai-api-key
    HOST=0.0.0.0
    PORT=8000
    ```
 
    **Environment Variables Explanation:**
-   - `SECRET_KEY`: Secret shared with the evaluation server (for verification)
+   - `STUDENT_SECRET`: Secret shared with the evaluation server (for verification)
    - `GITHUB_TOKEN`: GitHub Personal Access Token (with repo, delete_repo, write:packages scopes)
    - `GITHUB_USER`: Your GitHub username
    - `OPENAI_API_KEY`: OpenAI API key from https://platform.openai.com/api-keys
@@ -162,10 +162,10 @@ API information endpoint.
 
 1. **Request Validation**
    - Verifies all required fields
-   - Validates secret against `SECRET_KEY`
+   - Validates secret against `STUDENT_SECRET`
 
 2. **Code Generation**
-   - Sends task brief and requirements to Claude API
+   - Sends task brief and requirements to OpenAI API
    - Generates HTML, CSS, JavaScript, README, and LICENSE
    - Handles data URI attachments (base64 encoded)
 
@@ -286,10 +286,10 @@ Build and run:
 ```bash
 docker build -t llm-app-developer .
 docker run -p 8000:8000 \
-  -e SECRET_KEY=your-secret \
+  -e STUDENT_SECRET=your-secret \
   -e GITHUB_TOKEN=your-token \
   -e GITHUB_USER=your-user \
-  -e ANTHROPIC_API_KEY=your-key \
+  -e OPENAI_API_KEY=your-key \
   llm-app-developer
 ```
 
@@ -384,12 +384,12 @@ For issues or questions:
 1. Check the logs in the console output
 2. Verify environment variables are set correctly
 3. Ensure GitHub token has required permissions
-4. Check that Anthropic API key is valid
+4. Check that OpenAI API key is valid
 5. Review the FastAPI documentation at `/docs`
 
 ## References
 
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [GitHub API Reference](https://docs.github.com/en/rest)
-- [Anthropic Claude API](https://docs.anthropic.com/)
+- [OpenAI API Documentation](https://platform.openai.com/docs/)
 - [GitHub Pages](https://pages.github.com/)

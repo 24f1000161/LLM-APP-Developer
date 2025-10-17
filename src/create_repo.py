@@ -2,7 +2,10 @@
 import os
 import requests
 import subprocess
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def create_github_repo(repo_name: str, email: str) -> tuple:
@@ -51,7 +54,7 @@ def create_github_repo(repo_name: str, email: str) -> tuple:
     repo_url = repo_data["html_url"]
     clone_url = repo_data["clone_url"]
     
-    print(f"Created repository: {repo_url}")
+    logger.info(f"Created repository: {repo_url}")
     return repo_url, clone_url
 
 
@@ -92,7 +95,7 @@ def clone_existing_repo(repo_url: str, task_id: str) -> Path:
             capture_output=True,
             timeout=30,
         )
-        print(f"Cloned repository to {clone_dir}")
+        logger.info(f"Cloned repository to {clone_dir}")
         return clone_dir
     except subprocess.CalledProcessError as e:
         raise Exception(f"Failed to clone repo: {e.stderr.decode()}")

@@ -6,12 +6,20 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import os
 import logging
+import sys
+from datetime import datetime, timezone
+from contextlib import asynccontextmanager
 from src.validate_secrets import validate_secret
 from src.round1 import round1
 from src.round2 import round2
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout,
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +54,42 @@ class ErrorResponse(BaseModel):
     message: str = Field(...)
 
 
-app = FastAPI(title="LLM App Developer", version="1.0.0")
+# Lifespan context manager for startup/shutdown
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage app lifecycle - startup and shutdown."""
+    # Startup
+    logger.info("=" * 60)
+    logger.info("LLM App Developer starting up")
+    logger.info(f"Startup time: {datetime.now(timezone.utc).isoformat()}")
+    logger.info("=" * 60)
+    
+    # Verify required secrets
+    required_secrets = ["GITHUB_TOKEN", "STUDENT_SECRET"]
+    optional_secrets = ["OPENAI_API_KEY", "GOOGLE_API_KEY"]
+    
+    for secret in required_secrets:
+        if not os.getenv(secret):
+            logger.warning(f"⚠️  Missing required environment variable: {secret}")
+    
+    for secret in optional_secrets:
+        if os.getenv(secret):
+            logger.info(f"✓ {secret} is configured")
+    
+    yield
+    
+    # Shutdown
+    logger.info("LLM App Developer shutting down gracefully")
+
+
+app = FastAPI(
+    title="LLM App Developer",
+    version="1.0.0",
+    description="Build and deploy web applications using LLM-assisted code generation with GitHub Pages integration",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan,
+)
 
 # Add CORS middleware to allow requests from any origin
 app.add_middleware(
@@ -56,6 +99,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 
 @app.post("/submit", response_model=SuccessResponse)
@@ -102,8 +146,21 @@ async def submit(task_request: TaskRequest):
 
 @app.get("/health")
 async def health():
-    """Health check endpoint."""
-    return {"status": "healthy", "version": "1.0.0"}
+    """
+    Health check endpoint for monitoring systems.
+    Returns detailed status information.
+    """
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "secrets_configured": {
+            "github_token": bool(os.getenv("GITHUB_TOKEN")),
+            "openai_key": bool(os.getenv("OPENAI_API_KEY")),
+            "google_key": bool(os.getenv("GOOGLE_API_KEY")),
+            "student_secret": bool(os.getenv("STUDENT_SECRET")),
+        }
+    }
 
 
 @app.get("/")
@@ -112,11 +169,14 @@ async def root():
     return {
         "name": "LLM App Developer",
         "version": "1.0.0",
+        "description": "Build and deploy web applications using LLM-assisted code generation",
         "endpoints": {
             "POST /submit": "Process task requests (Round 1 or 2)",
-            "GET /health": "Health check",
+            "GET /health": "Health check with configuration status",
+            "GET /docs": "Interactive API documentation (Swagger UI)",
+            "GET /redoc": "API documentation (ReDoc)",
         },
-        "documentation": "/docs",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 

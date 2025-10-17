@@ -3,9 +3,12 @@ import os
 import json
 import base64
 import requests
+import logging
 from pathlib import Path
 from src.push_llm_code import generate_app_with_llm, push_code_to_repo
 from src.create_repo import clone_existing_repo
+
+logger = logging.getLogger(__name__)
 
 
 async def round2(request_data: dict) -> dict:
@@ -29,7 +32,7 @@ async def round2(request_data: dict) -> dict:
         attachments = request_data.get("attachments", [])
         repo_url = request_data.get("repo_url")  # From round 1 submission
         
-        print(f"[ROUND 2] Processing revision request for {email}, task: {task}")
+        logger.info(f"Processing revision request for {email}, task: {task}")
         
         # Create a temporary working directory for this task
         work_dir = Path(f"/tmp/llm-app-{task}-r2")
@@ -87,7 +90,7 @@ async def round2(request_data: dict) -> dict:
         )
         
         if response.status_code != 200:
-            print(f"[ROUND 2] Evaluation API returned {response.status_code}")
+            logger.warning(f"Evaluation API returned {response.status_code}")
             return {"status": "error", "message": "Evaluation API notification failed"}
         
         return {
@@ -98,7 +101,7 @@ async def round2(request_data: dict) -> dict:
         }
         
     except Exception as e:
-        print(f"[ROUND 2] Error: {str(e)}")
+        logger.error(f"Error: {str(e)}", exc_info=True)
         return {"status": "error", "message": str(e)}
 
 
@@ -109,5 +112,5 @@ def _decode_data_uri(data_uri: str) -> bytes:
         _, content = data_uri.split(",", 1)
         return base64.b64decode(content)
     except Exception as e:
-        print(f"Error decoding data URI: {e}")
+        logger.error(f"Error decoding data URI: {e}")
         return b""

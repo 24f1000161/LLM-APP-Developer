@@ -1,6 +1,9 @@
 # Enable GitHub Pages for a repository
 import requests
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 def enable_github_pages(
@@ -61,5 +64,5 @@ def enable_github_pages(
         # Construct the URL manually if not returned
         pages_url = f"https://{owner}.github.io/{repo}/"
     
-    print(f"GitHub Pages enabled at: {pages_url}")
+    logger.info(f"GitHub Pages enabled at: {pages_url}")
     return pages_url
