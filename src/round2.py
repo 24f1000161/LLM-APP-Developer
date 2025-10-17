@@ -82,7 +82,9 @@ async def round2(request_data: dict) -> None:
             github_user = os.getenv("GITHUB_USER")
             repo_name = derive_repo_name_from_task(task)
             repo_url = f"https://github.com/{github_user}/{repo_name}"
-            logger.info(f"Derived repo URL from task: {repo_url}")
+            logger.warning(f"repo_url not provided in request, derived from task: {repo_url}")
+        else:
+            logger.info(f"Using provided repo_url: {repo_url}")
         
         logger.info(f"Processing revision request for {email}, task: {task}")
         
