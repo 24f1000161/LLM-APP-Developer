@@ -313,7 +313,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 </FILE>"""
 
-
 def _build_user_prompt(
     brief: str,
     checks: list,
@@ -330,7 +329,7 @@ def _build_user_prompt(
         attachment_info = f"\n\nAttachments provided: {attachment_names}"
     
     if is_revision:
-        return f"""Please revise and enhance the web application based on these requirements:
+        return f"""Please revise and enhance the content based on these requirements:
 
 BRIEF:
 {brief}
@@ -339,11 +338,11 @@ REQUIREMENTS TO MEET:
 {checks_str}
 {attachment_info}
 
-Update the code to meet all requirements while maintaining existing functionality.
-Generate updated index.html, style.css, script.js, README.md, and LICENSE files.
+Update all files to meet all requirements while maintaining existing functionality.
+Generate EXACTLY the file types specified in the brief.
 Return ONLY the XML formatted response as specified."""
     else:
-        return f"""Please create a new web application based on these requirements:
+        return f"""Please create content based on these requirements:
 
 BRIEF:
 {brief}
@@ -352,11 +351,10 @@ REQUIREMENTS TO MEET:
 {checks_str}
 {attachment_info}
 
-Generate a complete, production-ready single-page application that meets ALL requirements.
-Create index.html, style.css, script.js, README.md, and LICENSE files.
+Generate complete, production-ready content that meets ALL requirements.
+Create EXACTLY the file types specified in the brief.
 Return ONLY the XML formatted response as specified."""
-
-
+    
 def _parse_llm_response(response_text: str) -> Dict[str, str]:
     """Extract files from LLM response."""
     files = {}
