@@ -29,7 +29,7 @@ class Config:
     GITHUB_REPO_PREFIX: str = os.getenv("GITHUB_REPO_PREFIX", "llm-app")
     
     # LLM Configuration
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-5-nano")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-5-mini")
     LLM_FALLBACK_MODEL: str = os.getenv("LLM_FALLBACK_MODEL", "gemini-2.5-flash")
     LLM_MAX_TOKENS: int = int(os.getenv("LLM_MAX_TOKENS", 4096))
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", 0.7))
@@ -61,7 +61,7 @@ class Config:
             "STUDENT_SECRET": "Student secret for verification",
             "GITHUB_TOKEN": "GitHub personal access token",
             "GITHUB_USER": "GitHub username",
-            "OPENAI_API_KEY": "OpenAI API key for GPT-5-nano (primary)",
+            "OPENAI_API_KEY": "OpenAI API key for GPT-5-mini (primary)",
             "GEMINI_API_KEY": "Google Gemini API key (fallback)",
         }
         

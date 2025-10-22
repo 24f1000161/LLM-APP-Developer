@@ -3,7 +3,7 @@ title: LLM App Developer
 sdk: docker
 app_port: 7860
 description: >-
-  A FastAPI application that generates and deploys web applications using OpenAI's GPT-5-nano. Receives task requests, generates complete web apps, deploys to GitHub Pages, and notifies evaluation servers with results.
+  A FastAPI application that generates and deploys web applications using OpenAI's GPT-5-mini. Receives task requests, generates complete web apps, deploys to GitHub Pages, and notifies evaluation servers with results.
 tags:
   - fastapi
   - llm
@@ -14,7 +14,7 @@ tags:
 
 # LLM App Developer
 
-A FastAPI application that generates and deploys web applications using OpenAI's GPT-5-nano. This server receives task requests from an evaluation platform, generates complete web applications, deploys them to GitHub Pages, and notifies the evaluation server with the results.
+A FastAPI application that generates and deploys web applications using OpenAI's GPT-5-mini. This server receives task requests from an evaluation platform, generates complete web applications, deploys them to GitHub Pages, and notifies the evaluation server with the results.
 
 ## Overview
 
@@ -147,7 +147,7 @@ API information and available endpoints.
 
 ## Features
 
-- ✅ Automatic code generation using OpenAI GPT-5-nano
+- ✅ Automatic code generation using OpenAI GPT-5-mini
 - ✅ GitHub repository creation and management
 - ✅ Automatic GitHub Pages deployment
 - ✅ Secret validation with timing attack protection

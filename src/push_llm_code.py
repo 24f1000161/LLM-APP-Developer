@@ -35,7 +35,7 @@ async def generate_app_with_llm(
     
     # Try OpenAI first
     try:
-        logger.info("Attempting to generate code with OpenAI GPT-5-nano...")
+        logger.info("Attempting to generate code with OpenAI GPT-5-mini...")
         files = await _generate_with_openai(brief, checks, attachments, is_revision)
         logger.info("Successfully generated code with OpenAI")
         return files
@@ -59,7 +59,7 @@ async def _generate_with_openai(
     attachments: Dict[str, bytes],
     is_revision: bool,
 ) -> Dict[str, str]:
-    """Generate code using OpenAI GPT-5-nano."""
+    """Generate code using OpenAI GPT-5-mini."""
     from pydantic_ai.models.openai import OpenAIModel
     
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
@@ -69,7 +69,7 @@ async def _generate_with_openai(
     # pydantic-ai uses OPENAI_API_KEY from environment
     # Initialize the model without api_key parameter
     model = OpenAIModel(
-        model_name="gpt-5-nano"
+        model_name="gpt-5-mini"
     )
     
     # Create an agent for code generation
