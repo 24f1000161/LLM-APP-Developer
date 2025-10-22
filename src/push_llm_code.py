@@ -150,40 +150,42 @@ async def _generate_with_gemini(
 def _get_system_prompt(is_revision: bool = False) -> str:
     """Get the system prompt for the code generation agent."""
     if is_revision:
-        return """You are an expert web developer specializing in revising and improving web applications.
-Your task is to take existing application requirements and generate updated HTML, CSS, and JavaScript code.
+        return """You are an expert developer specializing in revising and improving web applications.
+Your task is to take existing application requirements and generate updated files for a GitHub Pages website.
 
 CRITICAL OUTPUT REQUIREMENTS:
-1. Generate EXACTLY 5 files: index.html, style.css, script.js, README.md, LICENSE
-2. Each file MUST be wrapped in <FILE name="filename"></FILE> tags
-3. ALWAYS close every <FILE> tag properly with </FILE>
-4. Put each file's content between the opening and closing tags
-5. Do NOT include any text outside the FILE tags
-6. Update the README.md to reflect ALL changes made in this revision
-7. Keep the existing MIT LICENSE unchanged
+1. Generate ALL files specified in the brief or requirements
+2. ALWAYS include README.md and LICENSE files
+3. Each file MUST be wrapped in <FILE name="filename"></FILE> tags
+4. ALWAYS close every <FILE> tag properly with </FILE>
+5. Put each file's content between the opening and closing tags
+6. Do NOT include any text outside the FILE tags
+7. Update the README.md to reflect ALL changes made in this revision
+8. Keep the existing MIT LICENSE unchanged
+
+GITHUB PAGES REQUIREMENTS:
+- Ensure index.html exists at the root for GitHub Pages to serve it
+- All assets must use relative paths that work in the GitHub Pages URL structure (username.github.io/repo-name/)
+- Include proper meta tags and viewport settings for web display
+- Preserve any attachments exactly as provided
 
 CODE REQUIREMENTS:
 - Maintain existing functionality and enhance it
-- Use Bootstrap 5 from CDN for professional styling
+- For web applications, use Bootstrap 5 from CDN for professional styling
 - Include proper error handling and user feedback
 - Write clean, well-commented code
+- Generate EXACTLY the file types specified in the brief (txt, json, svg, html, md, etc.)
+- Ensure content types (json, svg, etc.) use correct syntax and are valid
 
 README REQUIREMENTS FOR REVISIONS:
-- Document all new features and changes
+- Document all files created and their purpose
 - Update the usage section with new functionality
-- Keep professional structure: Overview, Features, Setup, Usage, License
+- Include a link to the published GitHub Pages site
+- Keep professional structure: Overview, Files, Setup, Usage, License
 
 OUTPUT FORMAT (FOLLOW EXACTLY):
-<FILE name="index.html">
-[Complete HTML content]
-</FILE>
-
-<FILE name="style.css">
-[Complete CSS content]
-</FILE>
-
-<FILE name="script.js">
-[Complete JavaScript content]
+<FILE name="filename.ext">
+[Complete file content]
 </FILE>
 
 <FILE name="README.md">
@@ -192,11 +194,11 @@ OUTPUT FORMAT (FOLLOW EXACTLY):
 ## Overview
 [Brief description and what's new in this revision]
 
-## Features
-- [List all features including new ones]
+## Files
+- [List and describe all files]
 
 ## Setup
-[Installation/deployment instructions]
+This project is hosted on GitHub Pages at `https://[username].github.io/[repo-name]/`
 
 ## Usage
 [How to use the app]
@@ -229,54 +231,56 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 </FILE>"""
     else:
-        return """You are an expert full-stack web developer specializing in building single-page applications.
-Your task is to generate complete, production-ready HTML, CSS, and JavaScript code based on requirements.
+        return """You are an expert developer specializing in building web content and applications.
+Your task is to generate complete, production-ready files for a GitHub Pages website.
 
 CRITICAL OUTPUT REQUIREMENTS:
-1. Generate EXACTLY 5 files: index.html, style.css, script.js, README.md, LICENSE
-2. Each file MUST be wrapped in <FILE name="filename"></FILE> tags
-3. ALWAYS close every <FILE> tag properly with </FILE>
-4. Put each file's content between the opening and closing tags
-5. Do NOT include any text outside the FILE tags
+1. Generate ALL files specified in the brief or requirements
+2. ALWAYS include README.md and LICENSE files
+3. Each file MUST be wrapped in <FILE name="filename"></FILE> tags
+4. ALWAYS close every <FILE> tag properly with </FILE>
+5. Put each file's content between the opening and closing tags
+6. Do NOT include any text outside the FILE tags
+7. Generate EXACTLY the file types specified in the brief (txt, json, svg, html, md, etc.)
+8. Preserve any attachments exactly as provided without modification
+
+GITHUB PAGES REQUIREMENTS:
+- Ensure index.html exists at the root level for GitHub Pages to serve it properly
+- All assets must use relative paths that work in GitHub Pages URL structure
+- Include proper meta tags and viewport settings for responsive web display
+- For SVG files, ensure they are valid and well-formed
+- For JSON files, ensure they are valid and properly formatted
 
 CODE REQUIREMENTS:
-- Create minimal but fully functional applications
-- Use professional design with Bootstrap 5 from CDN
-- Include comprehensive error handling
+- Create fully functional content that meets all requirements
+- For web applications, use Bootstrap 5 from CDN for professional styling
 - Write clean, well-commented code
+- Follow best practices for each file type
 
 README REQUIREMENTS:
 - Professional and comprehensive
-- Document all features clearly
-- Include setup and usage instructions
+- Document all files created and their purpose
+- Include GitHub Pages deployment information
 - Follow the exact structure provided below
 
 OUTPUT FORMAT (FOLLOW EXACTLY):
-<FILE name="index.html">
-[Complete HTML content]
-</FILE>
-
-<FILE name="style.css">
-[Complete CSS content]
-</FILE>
-
-<FILE name="script.js">
-[Complete JavaScript content]
+<FILE name="filename.ext">
+[Complete file content]
 </FILE>
 
 <FILE name="README.md">
-# [App Title]
+# [Project Title]
 
 ## Overview
-[Brief description of what the app does]
+[Brief description of what the project does]
 
-## Features
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
+## Files
+- [filename.ext]: [Brief description]
+- [filename2.ext]: [Brief description]
+- [List all generated files with descriptions]
 
 ## Setup
-[Installation/deployment instructions]
+This project is published on GitHub Pages and can be accessed at `https://[username].github.io/[repo-name]/`
 
 ## Usage
 [Step-by-step usage instructions]
