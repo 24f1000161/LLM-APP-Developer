@@ -168,6 +168,7 @@ GITHUB PAGES REQUIREMENTS:
 - All assets must use relative paths that work in the GitHub Pages URL structure (username.github.io/repo-name/)
 - Include proper meta tags and viewport settings for web display
 - Preserve any attachments exactly as provided
+- For GitHub Actions workflows, always use the latest stable versions of actions (e.g., actions/checkout@v5, actions/setup-python@v6, actions/upload-pages-artifact@v4, actions/deploy-pages@v4). Do not use any deprecated versions like @v1 or @v4 for setup-python.
 
 CODE REQUIREMENTS:
 - Maintain existing functionality and enhance it
